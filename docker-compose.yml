@@ -1,0 +1,21 @@
+services:
+  # Операционная система (OLTP) — источник данных для ETL.
+  source:
+    build: ./source-service
+    environment:
+      # У каждого сервиса своя БД (database per service).
+      DATABASE_URL: "sqlite:///./source.db"
+    ports:
+      - "8001:8000"   # источник доступен снаружи на 8001 (по желанию)
+
+  # ETL-конвейер + витрина аналитики поверх DWH.
+  etl:
+    build: ./etl-service
+    environment:
+      SOURCE_URL: "http://source:8000"   # откуда тянуть данные (Extract)
+      HTTP_TIMEOUT: "10.0"
+      DATABASE_URL: "sqlite:///./dwh.db"  # своя БД-витрина
+    ports:
+      - "8000:8000"   # API конвейера и отчётов
+    depends_on:
+      - source
